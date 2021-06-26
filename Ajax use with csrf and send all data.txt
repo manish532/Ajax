@@ -1,0 +1,217 @@
+
+AJAX USE WITH CSRF send all data and recive response also
+*********************************************************************************************************************
+
+first make token in body for use csrf
+-------------------------------------
+ex-  token="{{ csrf_token() }}"
+-------------------------------------
+
+@extends("mainpage")
+
+@section("email-title")
+contact-us
+@endsection
+
+@section("email-title")
+contact-us
+@endsection
+
+<!-- link css -->
+
+@section("css-file")
+
+<link rel="stylesheet" href="../csspage/email.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+@endsection
+
+
+@section("js-file")
+
+<script src="../jspage/email.js"></script>
+
+@endsection
+
+<!-- link css -->
+@section("mail-content")
+<div class="margin text-color back-color pt-4 px-5 main-shadow">
+                            <form  id="login_form">
+                                @csrf
+                            <!--Header-->
+                            <div class="text-center">
+                                <h3 class="white-text mb-4 mt-3 contact-font"><strong>CONTACT</strong> <a class="green-text contact-font"><strong> US</strong></a></h3>
+                            </div>
+
+                            <!--Body-->
+                            <div class="md-form">
+                                <label required >Name</label>
+                                <input type="text" id="name" class="form-control white-text border-des mail-btn mb-2" name="name" placeholder="Enter Name">
+                               
+                            </div>
+
+                            <div class="md-form">
+                                <label>Mobile number</label>
+                                <input type="number" id="contact" class="form-control mail-btn mb-2" name="number" placeholder="Enter Number" required>
+                                
+                            </div>
+                  
+                            <div class="md-form">
+                                 <label>Mail</label>
+                                <input type="email" id="Form-pass5" class="form-control mail-btn mb-2" name="email" placeholder="Enter Email">
+                               
+                            </div>
+
+                            <div class="md-form mb-5">
+                                <label>Message</label> 
+                                <textarea type="text" id="message5" name="message" rows="2" class="form-control md-textarea white-text mail-btn" placeholder="Enter message"></textarea>
+                                
+                            </div>
+
+                            <!--Grid row-->
+                            <div class="row d-flex align-items-center">
+                                <!--Grid column-->
+                                <div class="text-center col-md-12">
+                                    <button type="submit" class="btn btn-success send-btn">Send message</button>
+                                </div>
+                                <!--Grid column-->
+                            </div>
+                            <!--Grid row-->
+                            </form>
+                            <div class="alert_massage w-100 p-4">
+                            
+                            </div>
+
+ </div>
+
+
+ <script>
+$(document).ready(function(){
+    
+      $("#login_form").submit(function(e){
+          e.preventDefault();
+          $.ajaxSetup({
+              headers : {
+                  'X-CSRF-TOKEN' : $("body").attr("token")
+              }
+          });
+            $.ajax({
+                type : "POST",
+                url : "/mailsent",
+                data : new FormData(this),
+                processData : false,
+                contentType : false,
+                cache : false,
+                beforeSend: function() {
+                    $(".send-btn").attr("disabled","disabled");
+                    $(".send-btn").html("please wait..");
+                    $(".alert_massage").html(`
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <strong>Please wait..!</strong> data is be sending..
+                        </div>
+                    `);
+               
+                },
+                success : function(res){
+                    console.log(res);
+                   
+                    $(".send-btn").removeAttr("disabled");
+                    $(".send-btn").html("SEND MASSAGE");
+                    $(".alert_massage").html(`
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <strong>`+res.status+`!</strong> `+res.message+`.
+                        </div>
+                    `);
+                    
+                 },
+                 error : function(xhr){
+                     console.log(xhr);
+                    $(".send-btn").removeAttr("disabled");
+                    $(".send-btn").html("sEND mASSAGE");
+                    $(".alert_massage").html(`
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <strong>Error!</strong> `+xhr.responseJSON.message+`
+                        </div>
+                    `);
+                 }
+                
+            });
+      });
+});
+</script>
+
+
+              
+@endsection
+
+
+*********************************************************************************************************
+*********************************************************************************************************
+ => recive data in controler and give response
+----------------------------------------------
+
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\mailer;
+use Illuminate\Support\Facades\QueryException;
+class navigate extends Controller
+{
+  public $file;
+  public $imagepath;
+  public $picname;
+  public $mime;
+  public $user_details;
+  public $name;
+  public $contact;
+  public $email;
+  public $message;
+
+    public function result(){
+        return view('email');
+    }
+
+    
+    public function mailrecived(Request $data){
+
+          $this->user_details = $data->all();
+
+         
+          $this->name = $this->user_details['name'];
+          $this->contact = $this->user_details['number'];
+          $this->email = $this->user_details['email'];
+          $this->message = $this->user_details['message'];
+
+        //   $this->file = $data->file('file');
+        //   $this->picname = $this->file->getClientOriginalName();
+        //   $this->mime = $this->file->getMimeType();
+        //   $this->imagepath = $this->file->getPathName();
+          
+        // Mail::to('bhijaanbasti@gmail.com')->send(new reciver());  
+try{
+        Mail::to('manishchauhanbasti@gmail.com')->send(new mailer(
+            array(
+                 "name"=>$this->name,
+                 "number"=>$this->contact,
+                 "email"=>$this->email,
+                 "subject"=>$this->message
+            )
+          ));  
+
+          return response(array("status"=>"success","message"=>"data send successfully","data"=>""),200)->header('Content-Type',"application/json");
+        }
+        catch(QueryException $error){
+          return response(array("status"=>"error","message"=>"data not sent, please try again later","data"=>""),404)->header('Content-Type',"application/json");
+        
+        }           
+}
+}
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
